@@ -44,7 +44,7 @@ TypeScriptSnippetSyntax.prototype.build = function ({
       'function (this: CustomWorld' +
       addParameters(allParameterNames) +
       ') {\n' +
-      '  const {page}: CustomWorld = this;\n\n'
+      '  const { page }: CustomWorld = this;\n\n'
     );
   });
 

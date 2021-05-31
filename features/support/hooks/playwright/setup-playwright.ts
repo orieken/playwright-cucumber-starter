@@ -4,6 +4,7 @@ import { CustomWorld } from '../../world/custom-world';
 import { ITestCaseHookParameter } from '@cucumber/cucumber/lib/support_code_library_builder/types';
 import { Browser } from 'playwright';
 import { Status } from '@cucumber/cucumber';
+import { messages } from '@cucumber/messages';
 
 declare global {
   namespace NodeJS {
@@ -13,24 +14,16 @@ declare global {
   }
 }
 
+const browsers: { [k: string]: () => Promise<Browser> } = {
+  firefox: async (): Promise<Browser> => firefox.launch(browserOptions),
+  webkit: async (): Promise<Browser> => webkit.launch(browserOptions),
+  chrome: async (): Promise<Browser> => chromium.launch({ ...browserOptions, channel: 'chrome' }),
+  chromium: async (): Promise<Browser> => chromium.launch(browserOptions),
+};
+
 export function createBrowser(): (this: CustomWorld) => Promise<void> {
   return async function () {
-    switch (process.env.BROWSER) {
-      case 'firefox':
-        global.browser = await firefox.launch(browserOptions);
-        break;
-      case 'webkit':
-        global.browser = await webkit.launch(browserOptions);
-        break;
-      case 'chrome':
-        global.browser = await chromium.launch({
-          ...browserOptions,
-          channel: 'chrome',
-        });
-        break;
-      default:
-        global.browser = await chromium.launch(browserOptions);
-    }
+    global.browser = await browsers[process.env.BROWSER ?? 'chrome']();
   };
 }
 
@@ -51,15 +44,23 @@ export function createContext(): (this: CustomWorld, { pickle }: ITestCaseHookPa
   };
 }
 
+async function attachScreenshot(this: CustomWorld) {
+  const image = await this.page?.screenshot();
+  image && (await this.attach(image, 'image/png'));
+}
+
+async function createReport(this: CustomWorld, result: messages.TestStepFinished.ITestStepResult | undefined) {
+  if (result) {
+    await this.attach(`Status: ${result?.status}. Duration:${result.duration?.seconds}}s`);
+    if (result.status !== Status.PASSED) {
+      await attachScreenshot.call(this);
+    }
+  }
+}
+
 export function closeContext(): (this: CustomWorld, { pickle }: ITestCaseHookParameter) => Promise<void> {
   return async function (this: CustomWorld, { result }: ITestCaseHookParameter) {
-    if (result) {
-      await this.attach(`Status: ${result?.status}. Duration:${result.duration?.seconds}}s`);
-      if (result.status !== Status.PASSED) {
-        const image = await this.page?.screenshot();
-        image && (await this.attach(image, 'image/png'));
-      }
-    }
+    await createReport.call(this, result);
 
     await this.page?.close();
     await this.context?.close();
