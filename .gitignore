@@ -102,3 +102,14 @@ dist
 
 # TernJS port file
 .tern-port
+
+# JetBrains
+.idea/
+
+# Cache of IntelliJ
+out/
+
+# VSCode
+.vscode/
+*.code-workspace
+

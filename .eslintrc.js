@@ -1,3 +1,5 @@
+// eslint @typescript-eslint/naming-convention: 0
+
 module.exports = {
   root: true,
   env: {
@@ -12,6 +14,11 @@ module.exports = {
     ecmaVersion: 12,
   },
   plugins: ['@typescript-eslint'],
+  ignorePatterns: [
+    '.eslintrc.js',
+    '/features/support/snippets/ts-snippets-syntax.js',
+    'features/support/hooks/playwright/browser-options.ts',
+  ],
   rules: {
     'prettier/prettier': 'error',
     quotes: ['error', 'single', 'avoid-escape'],

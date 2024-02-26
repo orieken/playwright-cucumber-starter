@@ -7,7 +7,6 @@ const common = `
   --require features/**/*.ts
   --require-module ts-node/register
   --format @cucumber/pretty-formatter
-  --publish-quiet
   --format-options ${formatOptions}
   `;
 

@@ -4,9 +4,11 @@ import { CustomWorld } from '../../world/custom-world';
 import { ITestCaseHookParameter } from '@cucumber/cucumber/lib/support_code_library_builder/types';
 import { Browser } from 'playwright';
 import { Status } from '@cucumber/cucumber';
-import { messages } from '@cucumber/messages';
 
 declare global {
+  // eslint-disable-next-line no-var
+  var browser: Browser;
+
   namespace NodeJS {
     interface Global {
       browser: Browser;
@@ -21,7 +23,7 @@ const browsers: { [k: string]: () => Promise<Browser> } = {
   chromium: async (): Promise<Browser> => chromium.launch(browserOptions),
 };
 
-export function createBrowser(): (this: CustomWorld) => Promise<void> {
+export function createBrowser(): () => Promise<void> {
   return async function () {
     global.browser = await browsers[process.env.BROWSER ?? 'chrome']();
   };
@@ -49,7 +51,7 @@ async function attachScreenshot(this: CustomWorld) {
   image && (await this.attach(image, 'image/png'));
 }
 
-async function createReport(this: CustomWorld, result: messages.TestStepFinished.ITestStepResult | undefined) {
+async function createReport(this: CustomWorld, { result }: ITestCaseHookParameter) {
   if (result) {
     await this.attach(`Status: ${result?.status}. Duration:${result.duration?.seconds}}s`);
     if (result.status !== Status.PASSED) {
@@ -58,9 +60,9 @@ async function createReport(this: CustomWorld, result: messages.TestStepFinished
   }
 }
 
-export function closeContext(): (this: CustomWorld, { pickle }: ITestCaseHookParameter) => Promise<void> {
+export function closeContext(): (this: CustomWorld, hookParameter: ITestCaseHookParameter) => Promise<void> {
   return async function (this: CustomWorld, { result }: ITestCaseHookParameter) {
-    await createReport.call(this, result);
+    await createReport.call(this, { result } as ITestCaseHookParameter);
 
     await this.page?.close();
     await this.context?.close();
