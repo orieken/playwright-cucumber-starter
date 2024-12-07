@@ -3,7 +3,9 @@ import { browserOptions } from './browser-options';
 import { CustomWorld } from '../../world/custom-world';
 import { ITestCaseHookParameter } from '@cucumber/cucumber/lib/support_code_library_builder/types';
 import { Browser } from 'playwright';
-import { Status } from '@cucumber/cucumber';
+
+import fs from 'node:fs';
+import { ConsoleLogger } from '../../playwright/console-logger';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -39,10 +41,17 @@ export function createContext(): (this: CustomWorld, { pickle }: ITestCaseHookPa
   return async function (this: CustomWorld, { pickle }: ITestCaseHookParameter) {
     this.context = await global.browser.newContext({
       acceptDownloads: true,
+      recordVideo: {
+        dir: 'reports/videos/',
+        size: { width: 1280, height: 720 },
+      },
     });
 
     this.page = await this.context?.newPage();
+    this.request = this.context?.request;
     this.feature = pickle;
+    this.scenarioName = pickle.name.replace(/\s+/g, '_');
+    this.consoleLogger = new ConsoleLogger(this.page);
   };
 }
 
@@ -51,12 +60,22 @@ async function attachScreenshot(this: CustomWorld) {
   image && (await this.attach(image, 'image/png'));
 }
 
+async function attachVideo(this: CustomWorld) {
+  const videoPath = (await this.page.video()?.path()) ?? '';
+
+  try {
+    await fs.promises.access(videoPath!);
+    const videoData = await fs.promises.readFile(videoPath!);
+    this.attach(videoData, 'video/mp4');
+  } catch (error) {
+    console.error('Error accessing or reading video file:', error);
+  }
+}
+
 async function createReport(this: CustomWorld, { result }: ITestCaseHookParameter) {
   if (result) {
-    await this.attach(`Status: ${result?.status}. Duration:${result.duration?.seconds}}s`);
-    if (result.status !== Status.PASSED) {
-      await attachScreenshot.call(this);
-    }
+    await this.attach(`Status: ${result?.status}. Duration: ${result.duration?.seconds}s`);
+    await attachScreenshot.call(this);
   }
 }
 
@@ -64,7 +83,11 @@ export function closeContext(): (this: CustomWorld, hookParameter: ITestCaseHook
   return async function (this: CustomWorld, { result }: ITestCaseHookParameter) {
     await createReport.call(this, { result } as ITestCaseHookParameter);
 
+    const logs = this.consoleLogger.getFormattedLogs();
+    logs && this.attach(logs, 'text/plain');
+
     await this.page?.close();
     await this.context?.close();
+    await attachVideo.call(this);
   };
 }
