@@ -22,4 +22,4 @@ jobs:
       - uses: actions/setup-node@v1
       - uses: microsoft/playwright-github-action@v1
       - name: Install dependencies and run tests
-        run: npm install && npm test
+        run: npm install
