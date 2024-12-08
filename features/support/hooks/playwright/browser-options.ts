@@ -1,5 +1,6 @@
 import { LaunchOptions } from 'playwright';
 
+/* eslint-disable @typescript-eslint/naming-convention */
 export const browserOptions: LaunchOptions = {
   slowMo: 0,
   args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
@@ -9,3 +10,4 @@ export const browserOptions: LaunchOptions = {
   },
   headless: false,
 };
+/* eslint-enable @typescript-eslint/naming-convention */

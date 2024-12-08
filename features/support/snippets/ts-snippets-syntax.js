@@ -19,6 +19,7 @@ TypeScriptSnippetSyntax.prototype.build = function ({
   let functionKeyword = '';
   const functionInterfaceKeywords = {
     generator: `${functionKeyword}*`,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'async-await': `async ${functionKeyword}`,
     promise: 'async ',
   };
@@ -51,4 +52,5 @@ TypeScriptSnippetSyntax.prototype.build = function ({
   return definitionChoices.join('') + `  // ${comment}\n  ${implementation}\n});`;
 };
 
+// eslint-disable-next-line no-undef
 module.exports = TypeScriptSnippetSyntax;

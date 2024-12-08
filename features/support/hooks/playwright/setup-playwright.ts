@@ -10,7 +10,7 @@ import { ConsoleLogger } from '../../playwright/console-logger';
 declare global {
   // eslint-disable-next-line no-var
   var browser: Browser;
-
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface Global {
       browser: Browser;
@@ -57,7 +57,9 @@ export function createContext(): (this: CustomWorld, { pickle }: ITestCaseHookPa
 
 async function attachScreenshot(this: CustomWorld) {
   const image = await this.page?.screenshot();
-  image && (await this.attach(image, 'image/png'));
+  if (image) {
+    this.attach(image, 'image/png');
+  }
 }
 
 async function attachVideo(this: CustomWorld) {
@@ -74,7 +76,7 @@ async function attachVideo(this: CustomWorld) {
 
 async function createReport(this: CustomWorld, { result }: ITestCaseHookParameter) {
   if (result) {
-    await this.attach(`Status: ${result?.status}. Duration: ${result.duration?.seconds}s`);
+    this.attach(`Status: ${result?.status}. Duration: ${result.duration?.seconds}s`);
     await attachScreenshot.call(this);
   }
 }
@@ -84,7 +86,9 @@ export function closeContext(): (this: CustomWorld, hookParameter: ITestCaseHook
     await createReport.call(this, { result } as ITestCaseHookParameter);
 
     const logs = this.consoleLogger.getFormattedLogs();
-    logs && this.attach(logs, 'text/plain');
+    if (logs) {
+      this.attach(logs, 'text/plain');
+    }
 
     await this.page?.close();
     await this.context?.close();

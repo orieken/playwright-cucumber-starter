@@ -14,6 +14,7 @@ const common = `
   --format json:./reports/cucumber_report-${timestamp}.json
   `;
 
+// eslint-disable-next-line no-undef
 module.exports = {
   default: `${common}`,
 };
